@@ -19,11 +19,6 @@ const int SCREEN_HEIGHT = 720;
 //Chỉ số pixel của màn hình
 const int SCREEN_BPP = 32;
 
-const int COLOR_KEY_R = 167;
-const int COLOR_KEY_G = 175;
-const int COLOR_KEY_B = 180;
-
-const int RENDERER_DRAWN_COLOR = 0xff;
 BaseObject g_background;
 
 bool init() 
@@ -53,7 +48,7 @@ bool init()
         }
         else
         {
-            SDL_SetRenderDrawColor(g_screen, RENDERER_DRAWN_COLOR, RENDERER_DRAWN_COLOR, RENDERER_DRAWN_COLOR, RENDERER_DRAWN_COLOR);
+            SDL_SetRenderDrawColor(g_screen, 0xff, 0xff, 0xff, 0xff);
 
             int imgFlags = IMG_INIT_PNG;
             if (!(IMG_Init(imgFlags) && imgFlags)) 
@@ -85,7 +80,12 @@ int main( int argc, char *argv[] )
         if( SDL_PollEvent( &g_event ) )
         { 
             if( g_event.type == SDL_QUIT ) break;
-        } 
+        }
+        
+        SDL_RenderClear( g_screen );
+
+        g_background.Render(g_screen, NULL);
+        SDL_RenderPresent( g_screen );
     }
 
 
