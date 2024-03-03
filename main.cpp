@@ -34,9 +34,22 @@ bool turn;
 
 //Texture list
 LTexture gBackground;
-LTexture topBar, botBar;
 Paddle lPaddle, rPaddle;
 Ball ball;
+SDL_Rect topBar = {0, 0, SCREEN_WIDTH, 8};
+SDL_Rect topLeftBar = {0, 8, 8, 178};
+SDL_Rect topRightBar = {SCREEN_WIDTH-8, 8, 8, 178};
+
+SDL_Rect botBar = {0, SCREEN_HEIGHT-8, SCREEN_WIDTH, 8};
+SDL_Rect botLeftBar = {0, SCREEN_HEIGHT - 186, 8, 178};
+SDL_Rect botRightBar = {SCREEN_WIDTH-8, SCREEN_HEIGHT - 186, 8, 178};
+
+SDL_Rect topLeftWall = {SCREEN_WIDTH/4, SCREEN_HEIGHT/4, 60, 60};
+SDL_Rect botLeftWall = {SCREEN_WIDTH/4, SCREEN_HEIGHT*3/4-60, 60, 60};
+SDL_Rect topRightWall = {SCREEN_WIDTH*3/4-60, SCREEN_HEIGHT/4, 60, 60};
+SDL_Rect botRightWall = {SCREEN_WIDTH*3/4-60, SCREEN_HEIGHT*3/4-60, 60, 60};
+
+
 
 bool checkCollision( SDL_Rect a, SDL_Rect b )
 {
@@ -73,6 +86,14 @@ bool checkCollision( SDL_Rect a, SDL_Rect b )
 
     //If none of the sides from A are outside B
     return true;
+}
+
+void bouncingBall(SDL_Rect rect, int tag){
+    double rel = (rect.y + (rect.h/2) - (ball.mPosY + (ball.BALL_SIZE/2)));
+    double norm = rel/(rect.h/2);
+    double bounce = norm*(5*PI/12);
+    ball.mVelX = tag*ball.BALL_SPEED*cos(bounce);
+    ball.mVelY = ball.BALL_SPEED*-sin(bounce);
 }
 
 LTexture::LTexture(){
@@ -312,6 +333,25 @@ void update(){
         ball.mVelY = ball.BALL_SPEED*-sin(bounce);
     }
 
+    if (checkCollision(ballRect, topLeftWall)) bouncingBall(topLeftWall, 1);
+    if (checkCollision(ballRect, botLeftWall)) bouncingBall(botLeftWall, 1);
+    if (checkCollision(ballRect, topRightWall)) bouncingBall(topRightWall, -1);
+    if (checkCollision(ballRect, botRightWall)) bouncingBall(botRightWall, -1);
+
+    ballRect.x = ball.mPosX;
+    ballRect.y = ball.mPosY;
+    bool side = true;
+
+    if (checkCollision(ballRect, topLeftBar) || checkCollision(ballRect, topRightBar)
+        || checkCollision(ballRect, botLeftBar) || checkCollision(ballRect, botRightBar)){
+        ball.mVelX = -ball.mVelX;
+        side = false;        
+    }
+        
+    if (checkCollision(ballRect, topBar) || checkCollision(ballRect, botBar)) 
+        ball.mVelY = -ball.mVelY;
+
+    
     //auto move right paddle
     if (ball.mPosY > rPaddle.mPosY + (rPaddle.getHeight()/2))
         rPaddle.mPosY += rPaddle.PAD_SPEED;
@@ -319,17 +359,14 @@ void update(){
         rPaddle.mPosY -= rPaddle.PAD_SPEED;
 
     //move ball
-    if (ball.mPosX <= 0) {
+    if (ball.mPosX <= 0 && side) {
         rSc++;
         serve();
     }
-    if (ball.mPosX + ball.BALL_SIZE >= SCREEN_WIDTH){
+    if (ball.mPosX + ball.BALL_SIZE >= SCREEN_WIDTH && side){
         lSc++;
         serve();
     }
-
-    if (ball.mPosY <= 0 || ball.mPosY + ball.BALL_SIZE >= SCREEN_HEIGHT) 
-        ball.mVelY = -ball.mVelY;
 
     if (startBall == true){
         ball.mPosX+=ball.mVelX;
@@ -393,10 +430,22 @@ void renderToScreen() {
     }
 
     //render here
-    SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+    SDL_SetRenderDrawColor( gRenderer, 142, 177, 92, 0xFF );
 
     //render game background
     gBackground.render();
+    SDL_RenderFillRect(gRenderer, &topBar);
+    SDL_RenderFillRect(gRenderer, &topLeftBar);
+    SDL_RenderFillRect(gRenderer, &topRightBar);
+
+    SDL_RenderFillRect(gRenderer, &botBar);
+    SDL_RenderFillRect(gRenderer, &botLeftBar);
+    SDL_RenderFillRect(gRenderer, &botRightBar);
+
+    SDL_RenderFillRect(gRenderer, &topLeftWall);
+    SDL_RenderFillRect(gRenderer, &botLeftWall);
+    SDL_RenderFillRect(gRenderer, &topRightWall);
+    SDL_RenderFillRect(gRenderer, &botRightWall);
 
     //render paddle
     lPaddle.render();
