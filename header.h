@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <windows.h>
 #include <string>
@@ -7,17 +8,40 @@
 class LTexture
 {
 public:
+    int mPosX, mPosY;
+    float mVelX, mVelY;
+
     LTexture();
     ~LTexture();
 
     bool loadFromFile (std::string path);
     int getWidth();
     int getHeight();
-    void render(int x, int y);
+    // void render(int x, int y);
+    void render();
+
+    //take key press and change vel
+    void handleEvent(SDL_Event &e);
+
+    //move texture
+    void move();
     void free();
 
 private:
     SDL_Texture* mTexture;
-    int mWidth;
-    int mHeight;
+    int mWidth, mHeight;
+    
+};
+
+class Ball : public LTexture
+{
+public:
+    int BALL_SIZE = 16;
+    int BALL_SPEED = 16;
+};
+
+class Paddle : public LTexture
+{
+public:
+    int PAD_SPEED = 9;
 };
