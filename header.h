@@ -44,4 +44,5 @@ class Paddle : public LTexture
 {
 public:
     int PAD_SPEED = 9;
+    //void movePaddle(int id);
 };

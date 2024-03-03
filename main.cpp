@@ -107,8 +107,21 @@ void LTexture::free(){
     }
 }
 
-bool init() 
-{
+// void Paddle::movePaddle(int id){
+//     const Uint8 *keystates = SDL_GetKeyboardState(NULL);
+
+//     if (keystates[SDL_SCANCODE_UP]) rPaddle.mPosY -=  rPaddle.PAD_SPEED;
+//     if (keystates[SDL_SCANCODE_DOWN]) rPaddle.mPosY += rPaddle.PAD_SPEED;
+//     if (keystates[SDL_SCANCODE_LEFT]) rPaddle.mPosX -= rPaddle.PAD_SPEED;
+//     if (keystates[SDL_SCANCODE_RIGHT]) rPaddle.mPosX += rPaddle.PAD_SPEED;
+
+//     if (keystates[SDL_SCANCODE_W]) lPaddle.mPosY -=  lPaddle.PAD_SPEED;
+//     if (keystates[SDL_SCANCODE_S]) lPaddle.mPosY += lPaddle.PAD_SPEED;
+//     if (keystates[SDL_SCANCODE_A]) lPaddle.mPosX -= lPaddle.PAD_SPEED;
+//     if (keystates[SDL_SCANCODE_D]) lPaddle.mPosX += lPaddle.PAD_SPEED;
+// }
+
+bool init() {
     bool success = true;
 
     //Initialize SDL
@@ -120,20 +133,15 @@ bool init()
     //Create window
     gWindow = SDL_CreateWindow( "PongX", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
 
-    if ( gWindow == NULL )
-    {
+    if ( gWindow == NULL ) {
         printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
         success = false;
-    }
-    else 
-    {
+    } else {
         //Get window surface
         gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
         if (gRenderer == NULL){
             success = false;
-        }
-        else
-        {
+        } else {
             SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
 
             int imgFlags = IMG_INIT_PNG;
@@ -175,8 +183,8 @@ void write(std::string text, int x, int y){
     texture = SDL_CreateTextureFromSurface(gRenderer, surface);
     scoreBoard.w = surface->w;
     scoreBoard.h = surface->h;
-    scoreBoard.x = surface->w;
-    scoreBoard.y = surface->h;
+    scoreBoard.x = x - surface->w;
+    scoreBoard.y = y - surface->h;
     SDL_FreeSurface(surface);
     SDL_RenderCopy(gRenderer, texture, NULL, &scoreBoard);
     SDL_DestroyTexture(texture);
@@ -211,6 +219,7 @@ bool loadMedia(){
 
     return success;
 }
+
 void update(){
     score = std::to_string(lSc) + " " + std::to_string(rSc);
 }
@@ -245,6 +254,8 @@ void renderToScreen() {
     }
 
     //render here
+    SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+
     //render game background
     gBackground.render();
 
@@ -253,7 +264,7 @@ void renderToScreen() {
     rPaddle.render();
 
     //render ball
-    // ball.render(0, 0);
+    //ball.render(0, 0);
 
     write(score, SCREEN_WIDTH/2 + FONT_SIZE, FONT_SIZE*2);
     //update to screen
