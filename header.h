@@ -30,7 +30,7 @@ class Ball : public LTexture
 {
 public:
     int BALL_SIZE = 24;
-    int BALL_SPEED = 20;
+    int BALL_SPEED = 19;
     SDL_Rect mCollider;
     void moveBall (SDL_Rect &wall);
 };

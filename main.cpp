@@ -15,11 +15,12 @@ static SDL_Event g_event;
 TTF_Font* gFont;
 SDL_Color fColor;
 bool isRunning = true;
+bool startBall = false;
 
 //Screen
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
-const int FONT_SIZE = 32;
+const int FONT_SIZE = 80;
 const double PI = 3.14159265358979323846;
 
 
@@ -219,15 +220,19 @@ bool init() {
     return success;
 }
 
-//reset paddle pos
+//reset paddle pos, change turn
 void serve() {
+    startBall = false;
     lPaddle.mPosY = rPaddle.mPosY = SCREEN_HEIGHT/2 - lPaddle.getHeight()/2;
+    lPaddle.mPosX = 32;
+    rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth() - 32;
+
     if (turn){
         ball.mPosX = lPaddle.mPosX + (lPaddle.getWidth()*4);
-        ball.mVelX = ball.BALL_SPEED/2;
+        ball.mVelX = ball.BALL_SPEED/1.5;
     } else {
         ball.mPosX = rPaddle.mPosX - (rPaddle.getWidth()*4);
-        ball.mVelX = -ball.BALL_SPEED/2;
+        ball.mVelX = -ball.BALL_SPEED/1.5;
     }
 
     ball.mVelY = 0;
@@ -326,10 +331,13 @@ void update(){
     if (ball.mPosY <= 0 || ball.mPosY + ball.BALL_SIZE >= SCREEN_HEIGHT) 
         ball.mVelY = -ball.mVelY;
 
-    ball.mPosX+=ball.mVelX;
-    ball.mPosY+=ball.mVelY;
+    if (startBall == true){
+        ball.mPosX+=ball.mVelX;
+        ball.mPosY+=ball.mVelY;
+    }
 
-    score = std::to_string(lSc) + " " + std::to_string(rSc);
+    score = std::to_string(lSc) + "   " + std::to_string(rSc);
+
     //Make sure paddle don't fly out game screen
     if (lPaddle.mPosY < 0) 
         lPaddle.mPosY = 0;
@@ -368,6 +376,8 @@ void input(){
     if (keystates[SDL_SCANCODE_S]) lPaddle.mPosY += lPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_A]) lPaddle.mPosX -= lPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_D]) lPaddle.mPosX += lPaddle.PAD_SPEED;
+    
+    if (keystates[SDL_SCANCODE_SPACE]) startBall = true; 
 }
 
 
