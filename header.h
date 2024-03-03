@@ -41,3 +41,12 @@ public:
     int PAD_SPEED = 9;
     //void movePaddle(int id);
 };
+
+class LButton : public LTexture
+{
+public:
+	int BUTTON_WIDTH = 334;
+    int BUTTON_HEIGHT = 102;
+    int id;
+    bool handleButton(SDL_Event* e);
+};

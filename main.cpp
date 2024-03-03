@@ -51,6 +51,12 @@ SDL_Rect botLeftWall = {SCREEN_WIDTH/4, SCREEN_HEIGHT*3/4-60, 60, 60};
 SDL_Rect topRightWall = {SCREEN_WIDTH*3/4-60, SCREEN_HEIGHT/4, 60, 60};
 SDL_Rect botRightWall = {SCREEN_WIDTH*3/4-60, SCREEN_HEIGHT*3/4-60, 60, 60};
 
+//Button list
+LButton playButton;
+LButton paddlex1;
+LButton paddlex2;
+int gamemode = 0;
+
 
 
 bool checkCollision( SDL_Rect a, SDL_Rect b )
@@ -167,6 +173,39 @@ void LTexture::free(){
         mHeight = 0;
     }
 }
+
+bool LButton::handleButton(SDL_Event* e){
+    //Check if mouse is in button
+    bool inside;
+    if (e->type == SDL_BUTTON_LEFT){
+        int x, y;
+        SDL_GetMouseState( &x, &y );
+        // std::cout<<x<<y;
+        
+
+        //Mouse is left of the button
+        if( x < mPosX ){
+            inside = false;
+        }
+        //Mouse is right of the button
+        else if( x > mPosX + BUTTON_WIDTH )
+        {
+            inside = false;
+        }
+        //Mouse above the button
+        else if( y < mPosY )
+        {
+            inside = false;
+        }
+        //Mouse below the button
+        else if( y > mPosY + BUTTON_HEIGHT )
+        {
+            inside = false;
+        }
+    }
+    return inside;
+}
+
 void Ball::moveBall(SDL_Rect &wall){
     //Move the dot left or right
     mPosX += mVelX;
@@ -292,7 +331,19 @@ bool loadMedia(){
         printf( "Failed to load option board texture image!\n" );
 		success = false;
     }
-
+    //Load game button
+    if (!playButton.loadFromFile("assets/pong-x-play-button.png")){
+        printf( "Failed to load play button texture image!\n" );
+		success = false;
+    }
+    if (!paddlex1.loadFromFile("assets/pong-x-1-paddle-button.png")){
+        printf( "Failed to load paddlex1 button texture image!\n" );
+		success = false;
+    }
+    if (!paddlex2.loadFromFile("assets/pong-x-2-paddle-button.png")){
+        printf( "Failed to load paddlex2 button texture image!\n" );
+		success = false;
+    }
     //Load game font
     gFont = TTF_OpenFont("assets/Peepo.ttf", FONT_SIZE);
     if (gFont == NULL){
@@ -380,7 +431,7 @@ void update(){
         ball.mPosY+=ball.mVelY;
     }
 
-    score =std::to_string(lSc) + "   " + std::to_string(rSc);
+    score = std::to_string(lSc) + "   " + std::to_string(rSc);
 
     //Make sure paddle don't fly out game screen
     if (lPaddle.mPosY < 0) 
@@ -408,8 +459,15 @@ void update(){
 void input(){
     SDL_Event e;
     const Uint8 *keystates = SDL_GetKeyboardState(NULL);
-    while (SDL_PollEvent(&e))
+    while (SDL_PollEvent(&e)){
         if (e.type==SDL_QUIT) isRunning = false;
+        if (playButton.handleButton(&e)) gamemode = 10;
+        if (paddlex1.handleButton(&e)) gamemode = 21;
+        if (paddlex2.handleButton(&e)) gamemode = 22;
+    }
+        
+
+   
 
     if (keystates[SDL_SCANCODE_UP]) rPaddle.mPosY -=  rPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_DOWN]) rPaddle.mPosY += rPaddle.PAD_SPEED;
@@ -424,7 +482,32 @@ void input(){
     if (keystates[SDL_SCANCODE_SPACE]) startBall = true;
     if (keystates[SDL_SCANCODE_ESCAPE]) opt = true;
 }
+void renderGameLayout(int mode){
+    if (mode>0){
+        gBackground.render();
+        SDL_RenderFillRect(gRenderer, &topBar);
+        SDL_RenderFillRect(gRenderer, &topLeftBar);
+        SDL_RenderFillRect(gRenderer, &topRightBar);
 
+        SDL_RenderFillRect(gRenderer, &botBar);
+        SDL_RenderFillRect(gRenderer, &botLeftBar);
+        SDL_RenderFillRect(gRenderer, &botRightBar);
+
+        SDL_RenderFillRect(gRenderer, &topLeftWall);
+        SDL_RenderFillRect(gRenderer, &botLeftWall);
+        SDL_RenderFillRect(gRenderer, &topRightWall);
+        SDL_RenderFillRect(gRenderer, &botRightWall);
+
+        //render paddle
+        lPaddle.render();
+        rPaddle.render();
+
+        //render ball
+        ball.render();
+
+        write(score, SCREEN_WIDTH/2 + FONT_SIZE, FONT_SIZE*2);
+    }
+}
 
 void renderToScreen() {
     //clear screen
@@ -440,33 +523,20 @@ void renderToScreen() {
     //render here
     SDL_SetRenderDrawColor( gRenderer, 142, 177, 92, 0xFF );
 
+    // gOpt.render();
+    // playButton.render();
+    // paddlex1.render();
+    // paddlex2.render();
+    gamemode = 1;
     //render game background
-    gBackground.render();
-    SDL_RenderFillRect(gRenderer, &topBar);
-    SDL_RenderFillRect(gRenderer, &topLeftBar);
-    SDL_RenderFillRect(gRenderer, &topRightBar);
-
-    SDL_RenderFillRect(gRenderer, &botBar);
-    SDL_RenderFillRect(gRenderer, &botLeftBar);
-    SDL_RenderFillRect(gRenderer, &botRightBar);
-
-    SDL_RenderFillRect(gRenderer, &topLeftWall);
-    SDL_RenderFillRect(gRenderer, &botLeftWall);
-    SDL_RenderFillRect(gRenderer, &topRightWall);
-    SDL_RenderFillRect(gRenderer, &botRightWall);
-
-    //render paddle
-    lPaddle.render();
-    rPaddle.render();
-
-    //render ball
-    ball.render();
-
-    write(score, SCREEN_WIDTH/2 + FONT_SIZE, FONT_SIZE*2);
+    renderGameLayout(gamemode);
 
     //render option board
     if (opt == true){
         gOpt.render();
+        playButton.render();
+        paddlex1.render();
+        paddlex2.render();
     }
     //update to screen
     SDL_RenderPresent( gRenderer );
@@ -500,7 +570,14 @@ int main( int argc, char *argv[] )
     lPaddle.mPosY = rPaddle.mPosY = SCREEN_HEIGHT/2 - lPaddle.getHeight()/2;
     lPaddle.mPosX = 32;
     rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth() - 32;
-    
+
+    int cordX = (SCREEN_WIDTH/2 -playButton.getWidth())/2;
+    playButton.mPosX = cordX;
+    paddlex1.mPosX = paddlex2.mPosX = SCREEN_WIDTH/2 + cordX;
+    playButton.mPosY = paddlex1.mPosY = 409;
+    paddlex2.mPosY = 587;
+
+
     serve();
 
     while (isRunning)
