@@ -208,11 +208,17 @@ bool loadMedia(){
 
     //Load paddle
     if (!lPaddle.loadFromFile("assets/pong-left-paddle-def.png")){
-        printf( "Failed to load paddle texture image!\n" );
+        printf( "Failed to load left paddle texture image!\n" );
 		success = false;
     }
     if (!rPaddle.loadFromFile("assets/pong-right-paddle-def.png")){
-        printf( "Failed to load paddle texture image!\n" );
+        printf( "Failed to load right paddle texture image!\n" );
+		success = false;
+    }
+
+    //Load ball
+    if(!ball.loadFromFile("assets/pong-ball.png")){
+        printf( "Failed to load ball texture image!\n" );
 		success = false;
     }
 
@@ -222,6 +228,27 @@ bool loadMedia(){
 
 void update(){
     score = std::to_string(lSc) + " " + std::to_string(rSc);
+    //Make sure paddle don't fly out game screen
+    if (lPaddle.mPosY < 0) 
+        lPaddle.mPosY = 0;
+    if (lPaddle.mPosY + lPaddle.getHeight() > SCREEN_HEIGHT)
+        lPaddle.mPosY = SCREEN_HEIGHT - lPaddle.getHeight();
+
+    if (lPaddle.mPosX < 0)
+        lPaddle.mPosX = 0;
+    if (lPaddle.mPosX + lPaddle.getWidth() > SCREEN_WIDTH/2)
+        lPaddle.mPosX = SCREEN_WIDTH/2 - lPaddle.getWidth();
+
+    if (rPaddle.mPosY < 0) 
+        rPaddle.mPosY = 0;
+    if (rPaddle.mPosY + rPaddle.getHeight() > SCREEN_HEIGHT)
+        rPaddle.mPosY = SCREEN_HEIGHT - rPaddle.getHeight();
+
+    if (rPaddle.mPosX < SCREEN_WIDTH/2)
+        rPaddle.mPosX = SCREEN_WIDTH/2;
+    if (rPaddle.mPosX + rPaddle.getWidth() > SCREEN_WIDTH)
+        rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth();
+
 }
 
 void input(){
@@ -264,7 +291,7 @@ void renderToScreen() {
     rPaddle.render();
 
     //render ball
-    //ball.render(0, 0);
+    ball.render();
 
     write(score, SCREEN_WIDTH/2 + FONT_SIZE, FONT_SIZE*2);
     //update to screen

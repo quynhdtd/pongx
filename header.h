@@ -36,8 +36,8 @@ private:
 class Ball : public LTexture
 {
 public:
-    int BALL_SIZE = 16;
-    int BALL_SPEED = 16;
+    int BALL_SIZE = 24;
+    int BALL_SPEED = 24;
 };
 
 class Paddle : public LTexture
