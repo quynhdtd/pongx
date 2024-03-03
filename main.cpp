@@ -1,6 +1,7 @@
 #include <iostream>
 #include <windows.h>
 #include <string>
+#include <math.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
@@ -19,7 +20,7 @@ bool isRunning = true;
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 const int FONT_SIZE = 32;
-const float PI = 3.14159265358979323846;
+const double PI = 3.14159265358979323846;
 
 
 int frameCount, timerFPS, lastFrame, fps;
@@ -36,6 +37,42 @@ LTexture topBar, botBar;
 Paddle lPaddle, rPaddle;
 Ball ball;
 
+bool checkCollision( SDL_Rect a, SDL_Rect b )
+{
+    //The sides of the rectangles
+    int leftA, leftB;
+    int rightA, rightB;
+    int topA, topB;
+    int bottomA, bottomB;
+
+    //Calculate the sides of rect A
+    leftA = a.x;
+    rightA = a.x + a.w;
+    topA = a.y;
+    bottomA = a.y + a.h;
+
+    //Calculate the sides of rect B
+    leftB = b.x;
+    rightB = b.x + b.w;
+    topB = b.y;
+    bottomB = b.y + b.h;
+
+    //If any of the sides from A are outside of B
+    if( bottomA <= topB )
+        return false;
+
+    if( topA >= bottomB )
+        return false;
+
+    if( rightA <= leftB )
+        return false;
+
+    if( leftA >= rightB )
+        return false;
+
+    //If none of the sides from A are outside B
+    return true;
+}
 
 LTexture::LTexture(){
     mTexture = NULL;
@@ -106,7 +143,31 @@ void LTexture::free(){
         mHeight = 0;
     }
 }
+void Ball::moveBall(SDL_Rect &wall){
+    //Move the dot left or right
+    mPosX += mVelX;
+	mCollider.x = mPosX;
 
+    //If the dot collided or went too far to the left or right
+    if( ( mPosX < 0 ) || ( mPosX + BALL_SIZE > SCREEN_WIDTH ) || checkCollision( mCollider, wall ) )
+    {
+        //Move back
+        mPosX -= mVelX;
+		mCollider.x = mPosX;
+    }
+
+    //Move the dot up or down
+    mPosY += mVelY;
+	mCollider.y = mPosY;
+
+    //If the dot collided or went too far up or down
+    if( ( mPosY < 0 ) || ( mPosY + BALL_SIZE > SCREEN_HEIGHT ) || checkCollision( mCollider, wall ) )
+    {
+        //Move back
+        mPosY -= mVelY;
+		mCollider.y = mPosY;
+    }
+}
 // void Paddle::movePaddle(int id){
 //     const Uint8 *keystates = SDL_GetKeyboardState(NULL);
 
@@ -227,6 +288,47 @@ bool loadMedia(){
 }
 
 void update(){
+    SDL_Rect ballRect = {ball.mPosX, ball.mPosY, ball.BALL_SIZE, ball.BALL_SIZE};
+    SDL_Rect rPaddleRect = {rPaddle.mPosX, rPaddle.mPosY, rPaddle.getWidth(), rPaddle.getHeight()};
+    SDL_Rect lPaddleRect = {lPaddle.mPosX, lPaddle.mPosY, lPaddle.getWidth(), lPaddle.getHeight()};
+    if (checkCollision(ballRect, rPaddleRect)) {
+        double rel = (rPaddle.mPosY + (rPaddle.getHeight()/2) - (ball.mPosY + (ball.BALL_SIZE/2)));
+        double norm = rel/(rPaddle.getHeight()/2);
+        double bounce = norm*(5*PI/12);
+        ball.mVelX = -ball.BALL_SPEED*cos(bounce);
+        ball.mVelY = ball.BALL_SPEED*-sin(bounce);
+    }
+
+    if (checkCollision(ballRect, lPaddleRect)) {
+        double rel = (lPaddle.mPosY + (lPaddle.getHeight()/2) - (ball.mPosY + (ball.BALL_SIZE/2)));
+        double norm = rel/(lPaddle.getHeight()/2);
+        double bounce = norm*(5*PI/12);
+        ball.mVelX = ball.BALL_SPEED*cos(bounce);
+        ball.mVelY = ball.BALL_SPEED*-sin(bounce);
+    }
+
+    //auto move right paddle
+    if (ball.mPosY > rPaddle.mPosY + (rPaddle.getHeight()/2))
+        rPaddle.mPosY += rPaddle.PAD_SPEED;
+    if (ball.mPosY < rPaddle.mPosY + (rPaddle.getHeight()/2))
+        rPaddle.mPosY -= rPaddle.PAD_SPEED;
+
+    //move ball
+    if (ball.mPosX <= 0) {
+        rSc++;
+        serve();
+    }
+    if (ball.mPosX + ball.BALL_SIZE >= SCREEN_WIDTH){
+        lSc++;
+        serve();
+    }
+
+    if (ball.mPosY <= 0 || ball.mPosY + ball.BALL_SIZE >= SCREEN_HEIGHT) 
+        ball.mVelY = -ball.mVelY;
+
+    ball.mPosX+=ball.mVelX;
+    ball.mPosY+=ball.mVelY;
+
     score = std::to_string(lSc) + " " + std::to_string(rSc);
     //Make sure paddle don't fly out game screen
     if (lPaddle.mPosY < 0) 

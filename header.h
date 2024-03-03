@@ -19,25 +19,20 @@ public:
     int getHeight();
     // void render(int x, int y);
     void render();
-
-    //take key press and change vel
-    void handleEvent(SDL_Event &e);
-
-    //move texture
-    void move();
     void free();
 
 private:
     SDL_Texture* mTexture;
     int mWidth, mHeight;
-    
 };
 
 class Ball : public LTexture
 {
 public:
     int BALL_SIZE = 24;
-    int BALL_SPEED = 24;
+    int BALL_SPEED = 20;
+    SDL_Rect mCollider;
+    void moveBall (SDL_Rect &wall);
 };
 
 class Paddle : public LTexture
