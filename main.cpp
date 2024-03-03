@@ -16,6 +16,7 @@ TTF_Font* gFont;
 SDL_Color fColor;
 bool isRunning = true;
 bool startBall = false;
+bool opt = false;
 
 //Screen
 const int SCREEN_WIDTH = 1280;
@@ -34,6 +35,7 @@ bool turn;
 
 //Texture list
 LTexture gBackground;
+LTexture gOpt;
 Paddle lPaddle, rPaddle;
 Ball ball;
 SDL_Rect topBar = {0, 0, SCREEN_WIDTH, 8};
@@ -285,6 +287,11 @@ bool loadMedia(){
         printf( "Failed to load background texture image!\n" );
 		success = false;
     }
+    //Load game option board
+    if (!gOpt.loadFromFile("assets/pong-x-opt.png")){
+        printf( "Failed to load option board texture image!\n" );
+		success = false;
+    }
 
     //Load game font
     gFont = TTF_OpenFont("assets/Peepo.ttf", FONT_SIZE);
@@ -373,7 +380,7 @@ void update(){
         ball.mPosY+=ball.mVelY;
     }
 
-    score = std::to_string(lSc) + "   " + std::to_string(rSc);
+    score =std::to_string(lSc) + "   " + std::to_string(rSc);
 
     //Make sure paddle don't fly out game screen
     if (lPaddle.mPosY < 0) 
@@ -414,7 +421,8 @@ void input(){
     if (keystates[SDL_SCANCODE_A]) lPaddle.mPosX -= lPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_D]) lPaddle.mPosX += lPaddle.PAD_SPEED;
     
-    if (keystates[SDL_SCANCODE_SPACE]) startBall = true; 
+    if (keystates[SDL_SCANCODE_SPACE]) startBall = true;
+    if (keystates[SDL_SCANCODE_ESCAPE]) opt = true;
 }
 
 
@@ -455,6 +463,11 @@ void renderToScreen() {
     ball.render();
 
     write(score, SCREEN_WIDTH/2 + FONT_SIZE, FONT_SIZE*2);
+
+    //render option board
+    if (opt == true){
+        gOpt.render();
+    }
     //update to screen
     SDL_RenderPresent( gRenderer );
 
