@@ -17,9 +17,9 @@ public:
     bool loadFromFile (std::string path);
     int getWidth();
     int getHeight();
-    // void render(int x, int y);
     void render();
     void free();
+    
 
 private:
     SDL_Texture* mTexture;
@@ -39,7 +39,8 @@ class Paddle : public LTexture
 {
 public:
     int PAD_SPEED = 9;
-    //void movePaddle(int id);
+    void LTBouncingBall(int tag);
+    void limitPaddle();
 };
 
 class LButton : public LTexture

@@ -16,7 +16,8 @@ TTF_Font* gFont;
 SDL_Color fColor;
 bool isRunning = true;
 bool startBall = false;
-bool opt = false;
+bool opt = true;
+int leftTarget = 1, rightTarget = 1;
 
 //Screen
 const int SCREEN_WIDTH = 1280;
@@ -37,6 +38,7 @@ bool turn;
 LTexture gBackground;
 LTexture gOpt;
 Paddle lPaddle, rPaddle;
+Paddle lPaddleID1, lPaddleID2, rPaddleID1, rPaddleID2;
 Ball ball;
 SDL_Rect topBar = {0, 0, SCREEN_WIDTH, 8};
 SDL_Rect topLeftBar = {0, 8, 8, 178};
@@ -174,15 +176,50 @@ void LTexture::free(){
     }
 }
 
+void Paddle::LTBouncingBall(int tag){
+    double rel = (mPosY + (getHeight()/2) - (ball.mPosY + (ball.BALL_SIZE/2)));
+    double norm = rel/(getHeight()/2);
+    double bounce = norm*(5*PI/12);
+    ball.mVelX = tag*ball.BALL_SPEED*cos(bounce);
+    ball.mVelY = ball.BALL_SPEED*-sin(bounce);
+}
+
+void Paddle::limitPaddle(){
+    //case top 
+    if (mPosY < 8) 
+        mPosY = 8;
+
+    //case bot
+    if (mPosY + getHeight() > SCREEN_HEIGHT-8)
+        mPosY = SCREEN_HEIGHT - 8 - getHeight();
+
+    //case left for left
+    if (mPosX < 8)
+        mPosX = 8;
+
+    //case right for right
+    if (mPosX + getWidth() > SCREEN_WIDTH - 8)
+        mPosX = SCREEN_WIDTH - 8 - getWidth();
+
+    // //case left for right
+    // if (rPaddle.mPosX < SCREEN_WIDTH/2)
+    //     rPaddle.mPosX = SCREEN_WIDTH/2;
+
+    // //case right
+    // if (rPaddle.mPosX + rPaddle.getWidth() > SCREEN_WIDTH)
+    //     rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth();
+}
+
+
 bool LButton::handleButton(SDL_Event* e){
     //Check if mouse is in button
     bool inside;
-    if (e->type == SDL_BUTTON_LEFT){
+    if (e->type == SDL_MOUSEBUTTONDOWN){
         int x, y;
         SDL_GetMouseState( &x, &y );
         // std::cout<<x<<y;
         
-
+        inside = true;
         //Mouse is left of the button
         if( x < mPosX ){
             inside = false;
@@ -203,6 +240,7 @@ bool LButton::handleButton(SDL_Event* e){
             inside = false;
         }
     }
+
     return inside;
 }
 
@@ -231,19 +269,7 @@ void Ball::moveBall(SDL_Rect &wall){
 		mCollider.y = mPosY;
     }
 }
-// void Paddle::movePaddle(int id){
-//     const Uint8 *keystates = SDL_GetKeyboardState(NULL);
 
-//     if (keystates[SDL_SCANCODE_UP]) rPaddle.mPosY -=  rPaddle.PAD_SPEED;
-//     if (keystates[SDL_SCANCODE_DOWN]) rPaddle.mPosY += rPaddle.PAD_SPEED;
-//     if (keystates[SDL_SCANCODE_LEFT]) rPaddle.mPosX -= rPaddle.PAD_SPEED;
-//     if (keystates[SDL_SCANCODE_RIGHT]) rPaddle.mPosX += rPaddle.PAD_SPEED;
-
-//     if (keystates[SDL_SCANCODE_W]) lPaddle.mPosY -=  lPaddle.PAD_SPEED;
-//     if (keystates[SDL_SCANCODE_S]) lPaddle.mPosY += lPaddle.PAD_SPEED;
-//     if (keystates[SDL_SCANCODE_A]) lPaddle.mPosX -= lPaddle.PAD_SPEED;
-//     if (keystates[SDL_SCANCODE_D]) lPaddle.mPosX += lPaddle.PAD_SPEED;
-// }
 
 bool init() {
     bool success = true;
@@ -288,6 +314,11 @@ void serve() {
     lPaddle.mPosY = rPaddle.mPosY = SCREEN_HEIGHT/2 - lPaddle.getHeight()/2;
     lPaddle.mPosX = 32;
     rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth() - 32;
+
+    lPaddleID1.mPosY = rPaddleID1.mPosY = SCREEN_HEIGHT/3 - lPaddleID1.getHeight()/2;
+    lPaddleID2.mPosY = rPaddleID2.mPosY = SCREEN_HEIGHT*2/3 - lPaddleID1.getHeight()/2;
+    lPaddleID1.mPosX = lPaddleID2.mPosX = 32;
+    rPaddleID1.mPosX = rPaddleID2.mPosX = SCREEN_WIDTH - rPaddleID1.getWidth() - 32;
 
     if (turn){
         ball.mPosX = lPaddle.mPosX + (lPaddle.getWidth()*4);
@@ -360,6 +391,22 @@ bool loadMedia(){
         printf( "Failed to load right paddle texture image!\n" );
 		success = false;
     }
+    if (!lPaddleID1.loadFromFile("assets/pong-left-paddle-1.png")){
+        printf("Failed to load left paddle ID1 texture image!\n");
+        success = false;
+    }
+    if (!lPaddleID2.loadFromFile("assets/pong-left-paddle-2.png")){
+        printf("Failed to load left paddle ID2 texture image!\n");
+        success = false;
+    }
+    if (!rPaddleID1.loadFromFile("assets/pong-right-paddle-1.png")){
+        printf("Failed to load right paddle ID1 texture image!\n");
+        success = false;
+    }
+    if (!rPaddleID2.loadFromFile("assets/pong-right-paddle-2.png")){
+        printf("Failed to load right paddle ID2 texture image!\n");
+        success = false;
+    }
 
     //Load ball
     if(!ball.loadFromFile("assets/pong-ball.png")){
@@ -375,6 +422,12 @@ void update(){
     SDL_Rect ballRect = {ball.mPosX, ball.mPosY, ball.BALL_SIZE, ball.BALL_SIZE};
     SDL_Rect rPaddleRect = {rPaddle.mPosX, rPaddle.mPosY, rPaddle.getWidth(), rPaddle.getHeight()};
     SDL_Rect lPaddleRect = {lPaddle.mPosX, lPaddle.mPosY, lPaddle.getWidth(), lPaddle.getHeight()};
+
+    SDL_Rect rPaddleRectID1 = {rPaddleID1.mPosX, rPaddleID1.mPosY, rPaddleID1.getWidth(), rPaddleID1.getHeight()};
+    SDL_Rect rPaddleRectID2 = {rPaddleID2.mPosX, rPaddleID2.mPosY, rPaddleID1.getWidth(), rPaddleID1.getHeight()};
+    SDL_Rect lPaddleRectID1 = {lPaddleID1.mPosX, lPaddleID1.mPosY, lPaddleID1.getWidth(), lPaddleID1.getHeight()};
+    SDL_Rect lPaddleRectID2 = {lPaddleID2.mPosX, lPaddleID2.mPosY, lPaddleID1.getWidth(), lPaddleID1.getHeight()};
+
     if (checkCollision(ballRect, rPaddleRect)) {
         double rel = (rPaddle.mPosY + (rPaddle.getHeight()/2) - (ball.mPosY + (ball.BALL_SIZE/2)));
         double norm = rel/(rPaddle.getHeight()/2);
@@ -390,6 +443,11 @@ void update(){
         ball.mVelX = ball.BALL_SPEED*cos(bounce);
         ball.mVelY = ball.BALL_SPEED*-sin(bounce);
     }
+
+    if (checkCollision(ballRect, lPaddleRectID1)) lPaddleID1.LTBouncingBall(1);
+    if (checkCollision(ballRect, lPaddleRectID2)) lPaddleID2.LTBouncingBall(1);
+    if (checkCollision(ballRect, rPaddleRectID1)) rPaddleID1.LTBouncingBall(-1);
+    if (checkCollision(ballRect, rPaddleRectID2)) rPaddleID2.LTBouncingBall(-1);
 
     if (checkCollision(ballRect, topLeftWall)) bouncingBall(topLeftWall, 1);
     if (checkCollision(ballRect, botLeftWall)) bouncingBall(botLeftWall, 1);
@@ -411,11 +469,18 @@ void update(){
 
     
     //auto move right paddle
-    if (ball.mPosY > rPaddle.mPosY + (rPaddle.getHeight()/2))
-        rPaddle.mPosY += rPaddle.PAD_SPEED;
-    if (ball.mPosY < rPaddle.mPosY + (rPaddle.getHeight()/2))
-        rPaddle.mPosY -= rPaddle.PAD_SPEED;
-
+    if (gamemode == 10){
+        if (ball.mPosY > rPaddle.mPosY + (rPaddle.getHeight()/2))
+            rPaddle.mPosY += rPaddle.PAD_SPEED;
+        if (ball.mPosY < rPaddle.mPosY + (rPaddle.getHeight()/2))
+            rPaddle.mPosY -= rPaddle.PAD_SPEED;
+    }
+    
+    if (gamemode == 0){
+        serve();
+        lSc = 0;
+        rSc = 0;
+    }
     //move ball
     if (ball.mPosX <= 0 && side) {
         rSc++;
@@ -434,25 +499,12 @@ void update(){
     score = std::to_string(lSc) + "   " + std::to_string(rSc);
 
     //Make sure paddle don't fly out game screen
-    if (lPaddle.mPosY < 0) 
-        lPaddle.mPosY = 0;
-    if (lPaddle.mPosY + lPaddle.getHeight() > SCREEN_HEIGHT)
-        lPaddle.mPosY = SCREEN_HEIGHT - lPaddle.getHeight();
-
-    if (lPaddle.mPosX < 0)
-        lPaddle.mPosX = 0;
-    if (lPaddle.mPosX + lPaddle.getWidth() > SCREEN_WIDTH/2)
-        lPaddle.mPosX = SCREEN_WIDTH/2 - lPaddle.getWidth();
-
-    if (rPaddle.mPosY < 0) 
-        rPaddle.mPosY = 0;
-    if (rPaddle.mPosY + rPaddle.getHeight() > SCREEN_HEIGHT)
-        rPaddle.mPosY = SCREEN_HEIGHT - rPaddle.getHeight();
-
-    if (rPaddle.mPosX < SCREEN_WIDTH/2)
-        rPaddle.mPosX = SCREEN_WIDTH/2;
-    if (rPaddle.mPosX + rPaddle.getWidth() > SCREEN_WIDTH)
-        rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth();
+    lPaddle.limitPaddle();
+    rPaddle.limitPaddle();
+    lPaddleID1.limitPaddle();
+    lPaddleID2.limitPaddle();
+    rPaddleID1.limitPaddle();
+    rPaddleID2.limitPaddle();
 
 }
 
@@ -461,26 +513,60 @@ void input(){
     const Uint8 *keystates = SDL_GetKeyboardState(NULL);
     while (SDL_PollEvent(&e)){
         if (e.type==SDL_QUIT) isRunning = false;
-        if (playButton.handleButton(&e)) gamemode = 10;
-        if (paddlex1.handleButton(&e)) gamemode = 21;
-        if (paddlex2.handleButton(&e)) gamemode = 22;
-    }
-        
 
-   
+        else if (e.type == SDL_MOUSEBUTTONDOWN) {
+            if (playButton.handleButton(&e)) gamemode = 10;
+            if (paddlex1.handleButton(&e)) gamemode = 21;
+            if (paddlex2.handleButton(&e)) gamemode = 22;
+        }
+    }
+    
+
+    if (keystates[SDL_SCANCODE_1]) leftTarget = 1;
+    else if (keystates[SDL_SCANCODE_2]) leftTarget = 2;
+        
+    if (keystates[SDL_SCANCODE_KP_1]) rightTarget = 1;
+    else if (keystates[SDL_SCANCODE_KP_2]) rightTarget = 2;
+
+    if (leftTarget == 1 ){
+        if (keystates[SDL_SCANCODE_W]) lPaddleID1.mPosY -= lPaddleID1.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_S]) lPaddleID1.mPosY += lPaddleID1.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_A]) lPaddleID1.mPosX -= lPaddleID1.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_D]) lPaddleID1.mPosX += lPaddleID1.PAD_SPEED;
+    } else if (leftTarget == 2){
+        if (keystates[SDL_SCANCODE_W]) lPaddleID2.mPosY -= lPaddleID2.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_S]) lPaddleID2.mPosY += lPaddleID2.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_A]) lPaddleID2.mPosX -= lPaddleID2.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_D]) lPaddleID2.mPosX += lPaddleID2.PAD_SPEED;
+    }
+
+    if (rightTarget == 1){
+        if (keystates[SDL_SCANCODE_UP]) rPaddleID1.mPosY -=  rPaddleID1.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_DOWN]) rPaddleID1.mPosY += rPaddleID1.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_LEFT]) rPaddleID1.mPosX -= rPaddleID1.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_RIGHT]) rPaddleID1.mPosX += rPaddleID1.PAD_SPEED;
+    } else if (rightTarget == 2) {
+        if (keystates[SDL_SCANCODE_UP]) rPaddleID2.mPosY -=  rPaddleID2.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_DOWN]) rPaddleID2.mPosY += rPaddleID2.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_LEFT]) rPaddleID2.mPosX -= rPaddleID2.PAD_SPEED;
+        if (keystates[SDL_SCANCODE_RIGHT]) rPaddleID2.mPosX += rPaddleID2.PAD_SPEED;
+    }
 
     if (keystates[SDL_SCANCODE_UP]) rPaddle.mPosY -=  rPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_DOWN]) rPaddle.mPosY += rPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_LEFT]) rPaddle.mPosX -= rPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_RIGHT]) rPaddle.mPosX += rPaddle.PAD_SPEED;
 
-    if (keystates[SDL_SCANCODE_W]) lPaddle.mPosY -=  lPaddle.PAD_SPEED;
+    if (keystates[SDL_SCANCODE_W]) lPaddle.mPosY -= lPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_S]) lPaddle.mPosY += lPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_A]) lPaddle.mPosX -= lPaddle.PAD_SPEED;
     if (keystates[SDL_SCANCODE_D]) lPaddle.mPosX += lPaddle.PAD_SPEED;
     
     if (keystates[SDL_SCANCODE_SPACE]) startBall = true;
-    if (keystates[SDL_SCANCODE_ESCAPE]) opt = true;
+    if (keystates[SDL_SCANCODE_ESCAPE]) {
+        opt = true;
+        gamemode = 0;
+    }
 }
 void renderGameLayout(int mode){
     if (mode>0){
@@ -499,8 +585,16 @@ void renderGameLayout(int mode){
         SDL_RenderFillRect(gRenderer, &botRightWall);
 
         //render paddle
-        lPaddle.render();
-        rPaddle.render();
+        if (mode == 10 || mode == 21) {
+            lPaddle.render();
+            rPaddle.render();
+        }
+        if (mode == 22) {
+            lPaddleID1.render();
+            lPaddleID2.render();
+            rPaddleID1.render();
+            rPaddleID2.render();
+        } 
 
         //render ball
         ball.render();
@@ -523,21 +617,27 @@ void renderToScreen() {
     //render here
     SDL_SetRenderDrawColor( gRenderer, 142, 177, 92, 0xFF );
 
-    // gOpt.render();
-    // playButton.render();
-    // paddlex1.render();
-    // paddlex2.render();
-    gamemode = 1;
-    //render game background
-    renderGameLayout(gamemode);
-
-    //render option board
-    if (opt == true){
+    if (opt == true) {
         gOpt.render();
         playButton.render();
         paddlex1.render();
         paddlex2.render();
     }
+
+    //gamemode = 1;
+    
+    //render game background
+    renderGameLayout(gamemode);
+
+    //render option board
+    // if (opt == true){
+    //     gamemode = 0;
+    //     gOpt.render();
+    //     playButton.render();
+    //     paddlex1.render();
+    //     paddlex2.render();
+
+    // }
     //update to screen
     SDL_RenderPresent( gRenderer );
 
@@ -570,6 +670,11 @@ int main( int argc, char *argv[] )
     lPaddle.mPosY = rPaddle.mPosY = SCREEN_HEIGHT/2 - lPaddle.getHeight()/2;
     lPaddle.mPosX = 32;
     rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth() - 32;
+
+    lPaddleID1.mPosY = rPaddleID1.mPosY = SCREEN_HEIGHT/3 - lPaddleID1.getHeight()/2;
+    lPaddleID2.mPosY = rPaddleID2.mPosY = SCREEN_HEIGHT*2/3 - lPaddleID1.getHeight()/2;
+    lPaddleID1.mPosX = lPaddleID2.mPosX = 32;
+    rPaddleID1.mPosX = rPaddleID2.mPosX = SCREEN_WIDTH - rPaddleID1.getWidth() - 32;
 
     int cordX = (SCREEN_WIDTH/2 -playButton.getWidth())/2;
     playButton.mPosX = cordX;
