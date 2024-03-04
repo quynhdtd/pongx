@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <string>
 #include <math.h>
+#include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
@@ -18,6 +19,8 @@ bool isRunning = true;
 bool startBall = false;
 bool opt = true;
 int leftTarget = 1, rightTarget = 1;
+// int windWay = rand() % 2;
+// int windPower = std::max(4, rand() % 8);
 
 //Screen
 const int SCREEN_WIDTH = 1280;
@@ -39,7 +42,7 @@ LTexture gBackground;
 LTexture gOpt;
 Paddle lPaddle, rPaddle;
 Paddle lPaddleID1, lPaddleID2, rPaddleID1, rPaddleID2;
-LTexture arrowTop, arrowBot;
+LTexture arrowTop, arrowBot, arrowLeft, arrowRight;
 Ball ball;
 SDL_Rect topBar = {0, 0, SCREEN_WIDTH, 8};
 SDL_Rect topLeftBar = {0, 8, 8, 178};
@@ -207,7 +210,7 @@ void Paddle::limitPaddle(){
 void Paddle::targetPaddle(){
     arrowTop.mPosX = arrowBot.mPosX = mPosX;
     arrowTop.mPosY = mPosY - 28;
-    arrowBot.mPosY = mPosY + getHeight();
+    arrowBot.mPosY = mPosY + 140;
 
     arrowTop.render();
     arrowBot.render();
@@ -419,6 +422,14 @@ bool loadMedia(){
         printf("Failed to load bottom arrow texture image!\n");
         success = false;
     }
+    if (!arrowLeft.loadFromFile("assets/pong-x-left-arrow.png")){
+        printf("Failed to load left arrow texture image!\n");
+        success = false;
+    }
+    if (!arrowRight.loadFromFile("assets/pong-x-right-arrow.png")){
+        printf("Failed to load right arrow texture image!\n");
+        success = false;
+    }
 
     //Load ball
     if(!ball.loadFromFile("assets/pong-ball.png")){
@@ -432,13 +443,13 @@ bool loadMedia(){
 
 void update(){
     SDL_Rect ballRect = {ball.mPosX, ball.mPosY, ball.BALL_SIZE, ball.BALL_SIZE};
-    SDL_Rect rPaddleRect = {rPaddle.mPosX, rPaddle.mPosY, rPaddle.getWidth(), rPaddle.getHeight()};
-    SDL_Rect lPaddleRect = {lPaddle.mPosX, lPaddle.mPosY, lPaddle.getWidth(), lPaddle.getHeight()};
+    SDL_Rect rPaddleRect = {rPaddle.mPosX, rPaddle.mPosY, 24, 140};
+    SDL_Rect lPaddleRect = {lPaddle.mPosX, lPaddle.mPosY, 24, 140};
 
-    SDL_Rect rPaddleRectID1 = {rPaddleID1.mPosX, rPaddleID1.mPosY, rPaddleID1.getWidth(), rPaddleID1.getHeight()};
-    SDL_Rect rPaddleRectID2 = {rPaddleID2.mPosX, rPaddleID2.mPosY, rPaddleID1.getWidth(), rPaddleID1.getHeight()};
-    SDL_Rect lPaddleRectID1 = {lPaddleID1.mPosX, lPaddleID1.mPosY, lPaddleID1.getWidth(), lPaddleID1.getHeight()};
-    SDL_Rect lPaddleRectID2 = {lPaddleID2.mPosX, lPaddleID2.mPosY, lPaddleID1.getWidth(), lPaddleID1.getHeight()};
+    SDL_Rect rPaddleRectID1 = {rPaddleID1.mPosX, rPaddleID1.mPosY, 24, 140};
+    SDL_Rect rPaddleRectID2 = {rPaddleID2.mPosX, rPaddleID2.mPosY, 24, 140};
+    SDL_Rect lPaddleRectID1 = {lPaddleID1.mPosX, lPaddleID1.mPosY, 24, 140};
+    SDL_Rect lPaddleRectID2 = {lPaddleID2.mPosX, lPaddleID2.mPosY, 24, 140};
 
     if (checkCollision(ballRect, rPaddleRect)) {
         double rel = (rPaddle.mPosY + (rPaddle.getHeight()/2) - (ball.mPosY + (ball.BALL_SIZE/2)));
@@ -503,6 +514,7 @@ void update(){
         serve();
     }
 
+
     if (startBall == true){
         ball.mPosX+=ball.mVelX;
         ball.mPosY+=ball.mVelY;
@@ -536,9 +548,11 @@ void input(){
 
     if (keystates[SDL_SCANCODE_1]) leftTarget = 1;
     else if (keystates[SDL_SCANCODE_2]) leftTarget = 2;
+    else if (keystates[SDL_SCANCODE_3]) leftTarget = 3;
         
     if (keystates[SDL_SCANCODE_KP_1]) rightTarget = 1;
     else if (keystates[SDL_SCANCODE_KP_2]) rightTarget = 2;
+    else if (keystates[SDL_SCANCODE_KP_3]) rightTarget = 3;
 
     if (leftTarget == 1 ){
         if (keystates[SDL_SCANCODE_W]) lPaddleID1.mPosY -= lPaddleID1.PAD_SPEED;
@@ -550,6 +564,23 @@ void input(){
         if (keystates[SDL_SCANCODE_S]) lPaddleID2.mPosY += lPaddleID2.PAD_SPEED;
         if (keystates[SDL_SCANCODE_A]) lPaddleID2.mPosX -= lPaddleID2.PAD_SPEED;
         if (keystates[SDL_SCANCODE_D]) lPaddleID2.mPosX += lPaddleID2.PAD_SPEED;
+    } else if (leftTarget == 3){
+        if (keystates[SDL_SCANCODE_W]){
+            lPaddleID1.mPosY -= lPaddleID2.PAD_SPEED;
+            lPaddleID2.mPosY -= lPaddleID2.PAD_SPEED;
+        } 
+        if (keystates[SDL_SCANCODE_S]){
+            lPaddleID1.mPosY += lPaddleID2.PAD_SPEED;
+            lPaddleID2.mPosY += lPaddleID2.PAD_SPEED;
+        } 
+        if (keystates[SDL_SCANCODE_A]){
+            lPaddleID1.mPosX -= lPaddleID2.PAD_SPEED;
+            lPaddleID2.mPosX -= lPaddleID2.PAD_SPEED;
+        } 
+        if (keystates[SDL_SCANCODE_D]){
+            lPaddleID1.mPosX += lPaddleID2.PAD_SPEED;
+            lPaddleID2.mPosX += lPaddleID2.PAD_SPEED;
+        } 
     }
 
     if (rightTarget == 1){
@@ -562,6 +593,23 @@ void input(){
         if (keystates[SDL_SCANCODE_DOWN]) rPaddleID2.mPosY += rPaddleID2.PAD_SPEED;
         if (keystates[SDL_SCANCODE_LEFT]) rPaddleID2.mPosX -= rPaddleID2.PAD_SPEED;
         if (keystates[SDL_SCANCODE_RIGHT]) rPaddleID2.mPosX += rPaddleID2.PAD_SPEED;
+    } else if (rightTarget == 3){
+        if (keystates[SDL_SCANCODE_UP]){
+            rPaddleID1.mPosY -= rPaddleID1.PAD_SPEED;
+            rPaddleID2.mPosY -= rPaddleID1.PAD_SPEED;
+        } 
+        if (keystates[SDL_SCANCODE_DOWN]){
+            rPaddleID1.mPosY += rPaddleID1.PAD_SPEED;
+            rPaddleID2.mPosY += rPaddleID1.PAD_SPEED;
+        } 
+        if (keystates[SDL_SCANCODE_LEFT]){
+            rPaddleID1.mPosX -= rPaddleID1.PAD_SPEED;
+            rPaddleID2.mPosX -= rPaddleID1.PAD_SPEED;
+        } 
+        if (keystates[SDL_SCANCODE_RIGHT]){
+            rPaddleID1.mPosX += rPaddleID1.PAD_SPEED;
+            rPaddleID2.mPosX += rPaddleID1.PAD_SPEED;
+        } 
     }
 
     if (keystates[SDL_SCANCODE_UP]) rPaddle.mPosY -=  rPaddle.PAD_SPEED;
@@ -611,12 +659,21 @@ void renderGameLayout(int mode){
             if (leftTarget == 2) lPaddleID2.targetPaddle();
             if (rightTarget == 1) rPaddleID1.targetPaddle();
             if (rightTarget == 2) rPaddleID2.targetPaddle();
+            if (leftTarget == 3) {
+                lPaddleID1.targetPaddle();
+                lPaddleID2.targetPaddle();
+            }
+            if (rightTarget == 3) {
+                rPaddleID1.targetPaddle();
+                rPaddleID2.targetPaddle();
+            }
         } 
 
         //render ball
         ball.render();
 
         write(score, SCREEN_WIDTH/2 + FONT_SIZE, FONT_SIZE*2);
+        // write("->", SCREEN_WIDTH/2, FONT_SIZE*2 - 80);
     }
 }
 
