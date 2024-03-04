@@ -39,6 +39,7 @@ LTexture gBackground;
 LTexture gOpt;
 Paddle lPaddle, rPaddle;
 Paddle lPaddleID1, lPaddleID2, rPaddleID1, rPaddleID2;
+LTexture arrowTop, arrowBot;
 Ball ball;
 SDL_Rect topBar = {0, 0, SCREEN_WIDTH, 8};
 SDL_Rect topLeftBar = {0, 8, 8, 178};
@@ -201,15 +202,16 @@ void Paddle::limitPaddle(){
     if (mPosX + getWidth() > SCREEN_WIDTH - 8)
         mPosX = SCREEN_WIDTH - 8 - getWidth();
 
-    // //case left for right
-    // if (rPaddle.mPosX < SCREEN_WIDTH/2)
-    //     rPaddle.mPosX = SCREEN_WIDTH/2;
-
-    // //case right
-    // if (rPaddle.mPosX + rPaddle.getWidth() > SCREEN_WIDTH)
-    //     rPaddle.mPosX = SCREEN_WIDTH - rPaddle.getWidth();
 }
 
+void Paddle::targetPaddle(){
+    arrowTop.mPosX = arrowBot.mPosX = mPosX;
+    arrowTop.mPosY = mPosY - 28;
+    arrowBot.mPosY = mPosY + getHeight();
+
+    arrowTop.render();
+    arrowBot.render();
+}
 
 bool LButton::handleButton(SDL_Event* e){
     //Check if mouse is in button
@@ -408,6 +410,16 @@ bool loadMedia(){
         success = false;
     }
 
+    //Load arrow
+    if (!arrowTop.loadFromFile("assets/pong-x-arrow-top.png")){
+        printf("Failed to load top arrow texture image!\n");
+        success = false;
+    }
+    if (!arrowBot.loadFromFile("assets/pong-x-arrow-bot.png")){
+        printf("Failed to load bottom arrow texture image!\n");
+        success = false;
+    }
+
     //Load ball
     if(!ball.loadFromFile("assets/pong-ball.png")){
         printf( "Failed to load ball texture image!\n" );
@@ -594,6 +606,11 @@ void renderGameLayout(int mode){
             lPaddleID2.render();
             rPaddleID1.render();
             rPaddleID2.render();
+
+            if (leftTarget == 1) lPaddleID1.targetPaddle();
+            if (leftTarget == 2) lPaddleID2.targetPaddle();
+            if (rightTarget == 1) rPaddleID1.targetPaddle();
+            if (rightTarget == 2) rPaddleID2.targetPaddle();
         } 
 
         //render ball

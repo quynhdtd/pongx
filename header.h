@@ -41,6 +41,7 @@ public:
     int PAD_SPEED = 9;
     void LTBouncingBall(int tag);
     void limitPaddle();
+    void targetPaddle();
 };
 
 class LButton : public LTexture
